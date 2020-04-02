@@ -11,6 +11,9 @@ peewee = "*"
 pytest = "*"
 flask-bcrypt = "*"
 flask-login = "*"
+flask-wtf = "*"
+wtforms = "*"
+flaskform = "*"
 
 [requires]
 python_version = "3.6"
