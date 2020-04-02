@@ -32,7 +32,7 @@ class Entry(Model):
     title = CharField()
     date = DateTimeField()
     time_spent = IntegerField()
-    what_you_learnined = TextField()
+    what_you_learned = TextField()
     resources_to_remember = TextField()
     tag = CharField()
     user = ForeignKeyField(
@@ -41,3 +41,9 @@ class Entry(Model):
 
     class Meta:
         database = db
+
+
+def initialize():
+    db.connect()
+    db.create_tables([User, Entry], safe=True)
+    db.close()
