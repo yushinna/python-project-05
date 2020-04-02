@@ -1,0 +1,13 @@
+{% macro render_field(field) %}
+{% if field.errors %}
+<div class="u-full-width field-errors">
+    <ul>
+        {% for error in field.errors %}
+        <a class="text-danger">{{ error }}</a>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{{ field.label }}
+{{ field(class="u-full-width") }}
+{% endmacro %}
