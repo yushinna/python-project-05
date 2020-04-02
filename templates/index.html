@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+{% from 'macros.html' import render_field %}
+{% block content %}
+<ul class="list-group list-group-flush"></ul>
+{% for entry in entries %}
+<div class="entry-list single">
+    <article>
+        <h2><a href="{{ url_for('show_entry', id=entry.id) }}">{{ entry.title }}</a></h2>
+        <time datetime=" 2016-01-31">{{ entry.date.strftime('%Y-%m-%d') }}</time>
+        <p><a href="{{ url_for('index_tag', tag=entry.tag) }}" class="badge badge-info badge-pill">{{ entry.tag }}</a>
+        </p>
+        {% else %}
+        <h2><a>No entry</a></h2>
+    </article>
+</div>
+{% endfor %}
+</ul>
+{% endblock %}
