@@ -30,6 +30,7 @@ class User(UserMixin, Model):
 
 class Entry(Model):
     title = CharField()
+    slug = CharField(unique=True)
     date = DateTimeField()
     time_spent = IntegerField()
     what_you_learned = TextField()
