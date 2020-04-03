@@ -13,7 +13,7 @@ flask-bcrypt = "*"
 flask-login = "*"
 flask-wtf = "*"
 wtforms = "*"
-flaskform = "*"
+python-slugify = "*"
 
 [requires]
 python_version = "3.6"
