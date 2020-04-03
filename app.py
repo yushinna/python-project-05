@@ -3,6 +3,7 @@ import datetime
 from flask import request, Flask, g, render_template, flash, redirect, url_for
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, current_user, login_required, logout_user
+from slugify import slugify
 
 import forms
 import models
@@ -92,8 +93,8 @@ def index():
     return render_template('index.html', entries=entries)
 
 
-@app.route('/tag/<tag>')
-def index_tag(tag):
+@app.route('/search/<tag>')
+def search_results(tag):
     entries = models.Entry.select().where(models.Entry.tag == tag).order_by(
         models.Entry.id.desc()
     ).limit(10)
@@ -108,6 +109,7 @@ def create_entry():
         models.Entry.create(
             user=g.user.id,
             title=form.title.data,
+            slug=slugify(form.title.data, separator="-", lowercase=True),
             date=form.date.data,
             time_spent=form.time_spent.data,
             what_you_learned=form.what_you_learned.data,
@@ -121,30 +123,28 @@ def create_entry():
     return render_template('new.html', form=form)
 
 
-@app.route('/detail/<int:id>', methods=['GET'])
-@login_required
-def show_entry(id):
-    entry = models.Entry.get(models.Entry.id == id)
+@app.route('/entries/<slug>', methods=['GET'])
+def show_entry(slug):
+    entry = models.Entry.get(models.Entry.slug == slug)
     return render_template('detail.html', entry=entry)
 
 
-@app.route('/detail/<int:id>/edit', methods=['GET', 'POST'])
+@app.route('/entries/<slug>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_entry(id):
-    entry = models.Entry.get(models.Entry.id == id)
+def edit_entry(slug):
+    entry = models.Entry.get(models.Entry.slug == slug)
     form = forms.EntryForm()
     if form.validate_on_submit():
-        entry.update(
-            user=g.user.id,
-            title=form.title.data,
-            date=form.date.data,
-            time_spent=form.time_spent.data,
-            what_you_learned=form.what_you_learned.data,
-            resources_to_remember=form.resources_to_remember.data,
-            tag=form.tag.data
-        )
+        entry.title = form.title.data
+        entry.slug = slugify(form.title.data, separator="-", lowercase=True)
+        entry.date = form.date.data
+        entry.time_spent = form.time_spent.data
+        entry.what_you_learned = form.what_you_learned.data
+        entry.resources_to_remember = form.resources_to_remember.data
+        entry.tag = form.tag.data
+        entry.save()
         flash("Update entry!", "success")
-        return render_template('detail.html', entry=entry)
+        return redirect(url_for('show_entry', slug=entry.slug))
 
     form.title.data = entry.title
     form.date.data = entry.date
@@ -155,10 +155,10 @@ def edit_entry(id):
     return render_template('edit.html', entry=entry, form=form)
 
 
-@app.route('/detail/<int:id>/delete', methods=['GET'])
+@app.route('/entries/<slug>/delete', methods=['GET'])
 @login_required
-def delete_entry(id):
-    entry = models.Entry.get(models.Entry.id == id)
+def delete_entry(slug):
+    entry = models.Entry.get(models.Entry.slug == slug)
     entry.delete_instance()
     flash("Delete entry!", "success")
     return redirect(url_for('index'))
