@@ -23,6 +23,6 @@
         {{ render_field(form.tag) }}
     </div>
     <input type="submit" class="btn btn-primary mb-0" value="Update Entry"></input>
-    <a href="{{ url_for('edit_entry', id=entry.id) }}" class="btn btn-secondary mb-0">Cancel</a>
+    <a href="{{ url_for('edit_entry', slug=entry.slug) }}" class="btn btn-secondary mb-0">Cancel</a>
 </form>
 {% endblock %}
