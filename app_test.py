@@ -2,6 +2,8 @@ import pytest
 from app import app
 import models
 from peewee import *
+from slugify import slugify
+
 
 app.config['TESTING'] = True
 app.config['WTF_CSRF_ENABLED'] = False
@@ -14,12 +16,23 @@ USER_DATA = {
 }
 
 ENTRY_DATA = {
-    'title': 'Python Test Driven Development',
+    'title': 'Flask App',
+    'slug': slugify('Flask App', separator="-", lowercase=True),
     'date': '2020-03-30',
     'time_spent': 60,
-    'what_you_learned': 'How to use Pytest',
-    'resources_to_remember': 'Python Testing with pytest',
-    'tag': 'python'
+    'what_you_learned': 'How to use Flask',
+    'resources_to_remember': 'Treehouse',
+    'tag': 'flask'
+}
+
+EDIT_DATA = {
+    'title': 'Flask App Development',
+    'slug': slugify('Flask App Development', separator="-", lowercase=True),
+    'date': '2020-04-01',
+    'time_spent': 60,
+    'what_you_learned': 'How to use Flask',
+    'resources_to_remember': 'Treehouse',
+    'tag': 'flask'
 }
 
 
@@ -48,7 +61,8 @@ class TestEntryModel():
     def test_entry_creation(self):
         user = models.User.select().get()
         models.Entry.create(
-            title='Python Test Driven Development',
+            title='Python Test',
+            slug=slugify('Python Test', separator="-", lowercase=True),
             date='2020-03-30',
             time_spent=60,
             what_you_learned='How to use Pytest',
@@ -105,8 +119,22 @@ class TestEntryViews():
         assert rv.location == 'http://localhost/'
         assert models.Entry.select().count() == 2
 
-    def test_edit_entry(self):
-        pass
-
     def test_delete_entry(self):
-        pass
+        test_client.post('/login', data=USER_DATA)
+        rv = test_client.get('/entries/flask-app/delete')
+        rv = test_client.get('/entries/python-test/delete')
+        assert rv.status_code == 302
+        assert rv.location == 'http://localhost/'
+        assert models.Entry.select().count() == 0
+
+    def test_edit_entry(self):
+        test_client.post('/login', data=USER_DATA)
+        ENTRY_DATA['user'] = models.User.select().get()
+        test_client.post('/new', data=ENTRY_DATA)
+        EDIT_DATA['user'] = models.User.select().get()
+        rv = test_client.post('/entries/flask-app/edit', data=EDIT_DATA)
+        assert rv.status_code == 302
+        assert rv.location == 'http://localhost/entries/flask-app-development'
+        test_client.get('/entries/flask-app-development/delete')
+        test_client.get('/logout')
+        assert models.Entry.select().count() == 0
