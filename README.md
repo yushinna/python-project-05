@@ -11,7 +11,7 @@ pipenv install
 ```
 
 ## Usage
-Run flask, enter given url (`http://0.0.0.0:8000` by default) so you can interact with the app!
+Run flask, enter given url (`http://0.0.0.0:8000` by default) on browser so you can interact with the app!
 
 ```
 # enter virtual environment
