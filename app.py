@@ -8,6 +8,8 @@ from slugify import slugify
 import forms
 import models
 
+from peewee import IntegrityError
+
 
 DEBUG = True
 PORT = 8000
@@ -90,15 +92,19 @@ def index():
     entries = models.Entry.select().order_by(
         models.Entry.id.desc()
     ).limit(10)
-    return render_template('index.html', entries=entries)
+    tags = models.Tag.select()
+    return render_template('index.html', entries=entries, tags=tags)
 
 
 @app.route('/search/<tag>')
 def search_results(tag):
-    entries = models.Entry.select().where(models.Entry.tag == tag).order_by(
+    entries = models.Entry.select().join(models.Tag).where(
+        models.Tag.tag == tag
+    ).order_by(
         models.Entry.id.desc()
     ).limit(10)
-    return render_template('index.html', entries=entries)
+    tags = models.Tag.select()
+    return render_template('index.html', entries=entries, tags=tags)
 
 
 @app.route('/new', methods=('GET', 'POST'))
@@ -106,16 +112,27 @@ def search_results(tag):
 def create_entry():
     form = forms.EntryForm()
     if form.validate_on_submit():
-        models.Entry.create(
-            user=g.user.id,
-            title=form.title.data,
-            slug=slugify(form.title.data, separator="-", lowercase=True),
-            date=form.date.data,
-            time_spent=form.time_spent.data,
-            what_you_learned=form.what_you_learned.data,
-            resources_to_remember=form.resources_to_remember.data,
-            tag=form.tag.data
-        )
+        slug_num = 1
+        while True:
+            try:
+                entry = models.Entry.create(
+                    user=g.user.id,
+                    title=form.title.data,
+                    slug=sluged_title(form.title.data + '-' + str(slug_num)),
+                    date=form.date.data,
+                    time_spent=form.time_spent.data,
+                    what_you_learned=form.what_you_learned.data,
+                    resources_to_remember=form.resources_to_remember.data,
+                )
+                break
+            except IntegrityError:
+                slug_num += 1
+
+        for tag in tags_to_list(form.tags.data):
+            models.Tag.create(
+                tag=tag,
+                entry=entry
+            )
         flash("Create new entry!", "success")
         return redirect(url_for('index'))
 
@@ -126,32 +143,52 @@ def create_entry():
 @app.route('/entries/<slug>', methods=['GET'])
 def show_entry(slug):
     entry = models.Entry.get(models.Entry.slug == slug)
-    return render_template('detail.html', entry=entry)
+    tags = models.Tag.select().where(models.Tag.entry == entry)
+    return render_template('detail.html', entry=entry, tags=tags)
 
 
 @app.route('/entries/<slug>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_entry(slug):
     entry = models.Entry.get(models.Entry.slug == slug)
+    tags = models.Tag.select().where(models.Tag.entry == entry)
     form = forms.EntryForm()
+
     if form.validate_on_submit():
-        entry.title = form.title.data
-        entry.slug = slugify(form.title.data, separator="-", lowercase=True)
-        entry.date = form.date.data
-        entry.time_spent = form.time_spent.data
-        entry.what_you_learned = form.what_you_learned.data
-        entry.resources_to_remember = form.resources_to_remember.data
-        entry.tag = form.tag.data
-        entry.save()
+        query = models.Tag.delete().where(models.Tag.entry == entry)
+        query.execute()
+        entry.delete_instance()
+        slug_num = 1
+        while True:
+            try:
+                entry = models.Entry.create(
+                    user=g.user.id,
+                    title=form.title.data,
+                    slug=sluged_title(form.title.data + '-' + str(slug_num)),
+                    date=form.date.data,
+                    time_spent=form.time_spent.data,
+                    what_you_learned=form.what_you_learned.data,
+                    resources_to_remember=form.resources_to_remember.data,
+                )
+                break
+            except IntegrityError:
+                slug_num += 1
+
+        for tag in tags_to_list(form.tags.data):
+            models.Tag.create(
+                tag=tag,
+                entry=entry
+            )
         flash("Update entry!", "success")
-        return redirect(url_for('show_entry', slug=entry.slug))
+        return redirect(url_for(
+            'show_entry', slug=sluged_title(form.title.data + '-' + str(slug_num))))
 
     form.title.data = entry.title
     form.date.data = entry.date
     form.time_spent.data = entry.time_spent
     form.what_you_learned.data = entry.what_you_learned
     form.resources_to_remember.data = entry.resources_to_remember
-    form.tag.data = entry.tag
+    form.tags.data = list_to_tags([tag.tag for tag in tags])
     return render_template('edit.html', entry=entry, form=form)
 
 
@@ -159,9 +196,23 @@ def edit_entry(slug):
 @login_required
 def delete_entry(slug):
     entry = models.Entry.get(models.Entry.slug == slug)
+    query = models.Tag.delete().where(models.Tag.entry == entry)
+    query.execute()
     entry.delete_instance()
     flash("Delete entry!", "success")
     return redirect(url_for('index'))
+
+
+def sluged_title(title):
+    return slugify(title, separator="-", lowercase=True)
+
+
+def tags_to_list(tags):
+    return tags.replace(" ", "").split(',')
+
+
+def list_to_tags(tags):
+    return ', '.join(tags)
 
 
 if __name__ == "__main__":
