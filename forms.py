@@ -36,9 +36,15 @@ class LoginForm(Form):
 
 
 class EntryForm(Form):
-    title = StringField(validators=[DataRequired()])
-    date = DateField(validators=[DataRequired()])
-    time_spent = IntegerField(validators=[DataRequired()])
-    what_you_learned = TextAreaField(validators=[DataRequired()])
-    resources_to_remember = TextAreaField(validators=[DataRequired()])
-    tag = StringField(validators=[DataRequired()])
+    title = StringField('Title', validators=[DataRequired()])
+    date = DateField('Date', validators=[DataRequired()])
+    time_spent = IntegerField('Time spent (minutes)',
+                              validators=[DataRequired()])
+    what_you_learned = TextAreaField(
+        'What I learnined', validators=[DataRequired()])
+    resources_to_remember = TextAreaField(
+        'Resources to Remember', validators=[DataRequired()])
+    tags = StringField(
+        'Tags (seperate by a comma)',
+        validators=[DataRequired()
+                    ])
