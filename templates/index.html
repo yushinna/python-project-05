@@ -7,8 +7,12 @@
         <article>
             <h2><a href="{{ url_for('show_entry', slug=entry.slug) }}">{{ entry.title }}</a></h2>
             <time datetime=" 2016-01-31">{{ entry.date.strftime('%Y-%m-%d') }}</time>
-            <p><a href="{{ url_for('search_results', tag=entry.tag) }}"
-                    class="badge badge-info badge-pill">{{ entry.tag }}</a></p>
+            {% for tag in tags %}
+            {% if tag.entry == entry %}
+            <p><a href="{{ url_for('search_results', tag=tag.tag) }}"
+                    class="badge badge-info badge-pill">{{ tag.tag }}</a></p>
+            {% endif %}
+            {% endfor %}
             {% else %}
             <h2><a>No entry</a></h2>
         </article>
