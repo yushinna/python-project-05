@@ -9,12 +9,14 @@ app = Flask(__name__)
 bcrypt = Bcrypt(app)
 
 
-class User(UserMixin, Model):
-    email = CharField(unique=True)
-    password = CharField(max_length=100)
-
+class BaseModel(Model):
     class Meta:
         database = db
+
+
+class User(UserMixin, BaseModel):
+    email = CharField(unique=True)
+    password = CharField(max_length=100)
 
     @classmethod
     def create_user(cls, email, password):
@@ -28,23 +30,22 @@ class User(UserMixin, Model):
             raise ValueError("User already exists")
 
 
-class Entry(Model):
-    title = CharField()
+class Entry(BaseModel):
+    title = CharField(max_length=100)
     slug = CharField(unique=True)
     date = DateTimeField()
     time_spent = IntegerField()
     what_you_learned = TextField()
     resources_to_remember = TextField()
-    tag = CharField()
-    user = ForeignKeyField(
-        User,
-        backref='entry')
+    user = ForeignKeyField(User)
 
-    class Meta:
-        database = db
+
+class Tag(BaseModel):
+    tag = CharField(max_length=50)
+    entry = ForeignKeyField(Entry)
 
 
 def initialize():
     db.connect()
-    db.create_tables([User, Entry], safe=True)
+    db.create_tables([User, Entry, Tag], safe=True)
     db.close()
